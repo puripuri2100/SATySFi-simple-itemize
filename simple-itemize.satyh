@@ -1,0 +1,102 @@
+@require: base/list-ext
+@require: option
+@require: gr
+@require: color
+@require: vdecoset
+
+
+module SimpleItemize :sig
+
+  direct \item : [inline-text?; (context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text] inline-cmd
+  direct +listing : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
+%  direct +enumerate : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
+%  direct +description : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
+  direct \listing : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
+%  direct \enumerate : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
+%  direct \description : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
+
+end = struct
+
+
+  let minus = float (-1)
+
+  let default-listing ctx lst title inner =
+    let text-width = get-text-width ctx in
+    let main-size = (get-font-size ctx) *' 0.35 in
+    let gr-lst =
+      [
+        Gr.circle (main-size*'0.5,main-size*'0.5) (main-size *' 0.5)
+        |> fill Color.black
+      ]
+    in
+    let circle-ib =
+      let main =
+        inline-graphics main-size main-size 0pt
+          (fun pt -> List.map (shift-graphics pt) gr-lst)
+      in
+        inline-skip 3pt ++ main ++ inline-skip 3pt
+    in
+    let circle-width = get-natural-width circle-ib in
+    let inner-ib = read-inline ctx inner in
+    let main-ib = inline-skip (circle-width *' minus) ++ circle-ib ++ inner-ib ++ inline-fil in
+    let deco-set = VDecoSet.empty in
+    let pads = (circle-width, 0pt, 0pt, 0pt) in
+      block-frame-breakable ctx pads deco-set
+        (fun ctx -> line-break true true ctx main-ib)
+
+
+  let-mutable count-lst <- []
+
+  let-mutable title-fun <- default-listing
+
+
+  let-inline ctx \item ?:title-opt ?:f-opt inner =
+    let old-lst = !count-lst in
+    let head =
+      List.head old-lst |> Option.from 0
+    in
+    let tail-lst =
+      List.tail old-lst |> Option.from []
+    in
+    let () = count-lst <- (head+1) :: tail-lst in
+    let new-lst = !count-lst in
+    let f =
+      match f-opt with
+      | None -> !title-fun
+      | Some(f) -> f
+    in
+    let title =
+      match title-opt with
+      | None -> {}
+      | Some(it) -> it
+    in
+    let bb = f ctx new-lst title inner in
+      embed-block-breakable ctx bb
+
+
+  let listing ctx f-opt itemize =
+    let () = count-lst <- 0::!count-lst in
+    let f =
+      match f-opt with
+      | None -> default-listing
+      | Some(f) -> f
+    in
+    let () = title-fun <- f in
+    let make-bb it =
+      let ib = read-inline ctx it in
+      ib ++ inline-fil
+      |> line-break true true ctx
+    in
+    itemize
+    |> List.map make-bb
+    |> List.fold-left (+++) block-nil
+
+  let-block ctx +listing ?:f-opt itemize =
+    listing ctx f-opt itemize
+
+
+
+  let-inline ctx \listing ?:f-opt itemize =
+      inline-fil ++ embed-block-breakable ctx (listing ctx f-opt itemize)
+
+end
