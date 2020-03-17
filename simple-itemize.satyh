@@ -124,6 +124,9 @@ end = struct
 
 
   let make-itemize ctx f-default f-opt break-default break-opt itemize =
+    let old-default-f = !title-fun in
+    let old-default-break = !if-break in
+    let old-default-lst = !count-lst in
     let () = count-lst <- 0::!count-lst in
     let f =
       match f-opt with
@@ -141,10 +144,15 @@ end = struct
       ib ++ inline-fil
       |> line-break true true ctx
     in
-    itemize
-    |> List.map make-bb
-    |> List.fold-left (+++) block-nil
-
+    let main-bb =
+      itemize
+      |> List.map make-bb
+      |> List.fold-left (+++) block-nil
+    in
+    let () = title-fun <- old-default-f in
+    let () = if-break <- old-default-break in
+    let () = count-lst <- old-default-lst in
+    main-bb
 
   let listing ctx f-opt break-opt itemize =
     make-itemize ctx default-listing f-opt false break-opt itemize
