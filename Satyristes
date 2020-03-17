@@ -1,0 +1,14 @@
+;; For Satyrographos 0.0.2 series
+(version 0.0.2)
+
+(library
+  (name "simple-itemize")
+  (version "1.0.0")
+  (sources
+    (
+     (package "simple-itemize" "./stdjahtml.satyh-html")
+    )
+  )
+  (opam "satysfi-simple-itemize.opam")
+  (dependencies ())
+  (compatibility ((satyrographos "0.0.1"))))
