@@ -17,17 +17,33 @@ module SimpleItemize :sig
 
 end = struct
 
-
   let minus = float (-1)
 
   let default-listing ctx lst title =
     let text-width = get-text-width ctx in
-    let main-size = (get-font-size ctx) *' 0.35 in
+    let main-size = (get-font-size ctx) *' 0.5 in
     let gr-lst =
-      [
-        Gr.circle (main-size*'0.5,main-size*'0.5) (main-size *' 0.5)
-        |> fill Color.black
-      ]
+      match (List.length lst) mod 3 with
+      | 1 ->
+        [
+          Gr.circle (main-size*'0.5,main-size*'0.5) (main-size *' 0.4)
+          |> fill Color.black
+        ]
+      | 2 ->
+        [
+          Gr.polygon (0pt,0pt) [(main-size, main-size *' 0.5); (0pt, main-size)]
+          |> fill Color.black
+        ]
+      | _ ->
+        [
+          Gr.polygon (main-size *' 0.5, main-size)
+            [
+              (0pt, main-size *' 0.5);
+              (main-size *' 0.5, 0pt);
+              (main-size, main-size *' 0.5);
+            ]
+          |> fill Color.black
+        ]
     in
     let circle-ib =
       let main =
@@ -62,6 +78,28 @@ end = struct
     let title-ib = read-inline d-ctx title in
       inline-skip 3pt ++ title-ib ++ inline-skip 3pt
 
+
+  type t =
+    | Nothing
+    | Listing
+    | Enumerate
+    | Description
+
+  let is-Nothing t =
+    match t with
+    | Nothing -> true
+    | _ -> false
+
+  let equal-t t1 t2 =
+    match (t1, t2) with
+    | (Nothing,_) -> true
+    | (_,Nothing) -> true
+    | (Listing,Listing) -> true
+    | (Enumerate,Enumerate) -> true
+    | (Description,Description) -> true
+    | _ -> false
+
+  let-mutable t-ref <- Nothing
 
   let-mutable if-break <- false
 
@@ -123,11 +161,16 @@ end = struct
         embed-block-breakable ctx non-break-main-bb
 
 
-  let make-itemize ctx f-default f-opt break-default break-opt itemize =
+  let make-itemize ctx f-default f-opt break-default break-opt change-bool itemize =
     let old-default-f = !title-fun in
     let old-default-break = !if-break in
     let old-default-lst = !count-lst in
-    let () = count-lst <- 0::!count-lst in
+    let () =
+      if change-bool then
+        count-lst <- 0::!count-lst
+      else
+        count-lst <- []
+    in
     let f =
       match f-opt with
       | None -> f-default
@@ -155,38 +198,39 @@ end = struct
     main-bb
 
   let listing ctx f-opt break-opt itemize =
-    make-itemize ctx default-listing f-opt false break-opt itemize
+    let b = equal-t Listing !t-ref in
+    let () = t-ref <- Listing in
+    make-itemize ctx default-listing f-opt false break-opt b itemize
+
+
+  let enumerate ctx f-opt break-opt itemize =
+    let b = equal-t Enumerate !t-ref in
+    let () = t-ref <- Enumerate in
+    make-itemize ctx default-enumerate f-opt false break-opt b itemize
+
+
+  let description ctx f-opt break-opt itemize =
+    let b = equal-t Description !t-ref in
+    let () = t-ref <- Description in
+    make-itemize ctx default-description f-opt true break-opt b itemize
 
 
   let-block ctx +listing ?:f-opt ?:break-opt itemize =
     listing ctx f-opt break-opt itemize
 
-
   let-inline ctx \listing ?:f-opt ?:break-opt itemize =
       inline-fil ++ embed-block-breakable ctx (listing ctx f-opt break-opt itemize)
-
-
-
-  let enumerate ctx f-opt break-opt itemize =
-    make-itemize ctx default-enumerate f-opt false break-opt itemize
 
 
   let-block ctx +enumerate ?:f-opt ?:break-opt itemize =
     enumerate ctx f-opt break-opt itemize
 
-
   let-inline ctx \enumerate ?:f-opt ?:break-opt itemize =
       inline-fil ++ embed-block-breakable ctx (enumerate ctx f-opt break-opt itemize)
 
 
-
-  let description ctx f-opt break-opt itemize =
-    make-itemize ctx default-description f-opt true break-opt itemize
-
-
   let-block ctx +description ?:f-opt ?:break-opt itemize =
     description ctx f-opt break-opt itemize
-
 
   let-inline ctx \description ?:f-opt ?:break-opt itemize =
       inline-fil ++ embed-block-breakable ctx (description ctx f-opt break-opt itemize)
