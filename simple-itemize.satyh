@@ -9,11 +9,11 @@ module SimpleItemize :sig
 
   direct \item : [inline-text?; (context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text] inline-cmd
   direct +listing : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd
-%  direct +enumerate : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
-%  direct +description : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
+  direct +enumerate : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd
+  direct +description : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd
   direct \listing : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd
-%  direct \enumerate : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
-%  direct \description : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
+  direct \enumerate : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd
+  direct \description : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd
 
 end = struct
 
@@ -37,6 +37,31 @@ end = struct
         inline-skip 3pt ++ main ++ inline-skip 3pt
     in
       circle-ib
+
+
+  let default-enumerate ctx lst title =
+    let num-opt = List.head lst in
+    let num-str =
+      match num-opt with
+      | None -> ` `
+      | Some(n) -> `(` ^ arabic n ^ `)`
+    in
+    let title-ib =
+      num-str |> embed-string |> read-inline ctx
+    in
+      inline-skip 3pt ++ title-ib ++ inline-skip 3pt
+
+
+  let default-description ctx lst title =
+    let d-ctx =
+      ctx
+      |> set-font Kana (`ipaexg`, 0.88, 0.0)
+      |> set-font HanIdeographic (`ipaexg`, 0.88, 0.0)
+      |> set-font Latin (`lmsans`, 0.88, 0.0)
+    in
+    let title-ib = read-inline d-ctx title in
+      inline-skip 3pt ++ title-ib ++ inline-skip 3pt
+
 
   let-mutable if-break <- false
 
@@ -98,17 +123,17 @@ end = struct
         embed-block-breakable ctx non-break-main-bb
 
 
-  let listing ctx f-opt break-opt itemize =
+  let make-itemize ctx f-default f-opt break-default break-opt itemize =
     let () = count-lst <- 0::!count-lst in
     let f =
       match f-opt with
-      | None -> default-listing
+      | None -> f-default
       | Some(f) -> f
     in
     let () = title-fun <- f in
     let () =
       match break-opt with
-      | None -> if-break <- false
+      | None -> if-break <- break-default
       | Some(b) -> if-break <- b
     in
     let make-bb it =
@@ -121,11 +146,41 @@ end = struct
     |> List.fold-left (+++) block-nil
 
 
+  let listing ctx f-opt break-opt itemize =
+    make-itemize ctx default-listing f-opt false break-opt itemize
+
+
   let-block ctx +listing ?:f-opt ?:break-opt itemize =
     listing ctx f-opt break-opt itemize
 
 
   let-inline ctx \listing ?:f-opt ?:break-opt itemize =
       inline-fil ++ embed-block-breakable ctx (listing ctx f-opt break-opt itemize)
+
+
+
+  let enumerate ctx f-opt break-opt itemize =
+    make-itemize ctx default-enumerate f-opt false break-opt itemize
+
+
+  let-block ctx +enumerate ?:f-opt ?:break-opt itemize =
+    enumerate ctx f-opt break-opt itemize
+
+
+  let-inline ctx \enumerate ?:f-opt ?:break-opt itemize =
+      inline-fil ++ embed-block-breakable ctx (enumerate ctx f-opt break-opt itemize)
+
+
+
+  let description ctx f-opt break-opt itemize =
+    make-itemize ctx default-description f-opt true break-opt itemize
+
+
+  let-block ctx +description ?:f-opt ?:break-opt itemize =
+    description ctx f-opt break-opt itemize
+
+
+  let-inline ctx \description ?:f-opt ?:break-opt itemize =
+      inline-fil ++ embed-block-breakable ctx (description ctx f-opt break-opt itemize)
 
 end
