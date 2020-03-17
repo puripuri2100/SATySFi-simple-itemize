@@ -1,6 +1,7 @@
 .PHONY: test
 
 test:
+	satysfi test/break-test.saty -o test/break-test.pdf
 	satysfi test/test.saty -o test/test.pdf
 
 

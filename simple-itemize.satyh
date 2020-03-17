@@ -7,11 +7,11 @@
 
 module SimpleItemize :sig
 
-  direct \item : [inline-text?; (context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text] inline-cmd
-  direct +listing : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
+  direct \item : [inline-text?; (context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text] inline-cmd
+  direct +listing : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd
 %  direct +enumerate : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
 %  direct +description : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] block-cmd
-  direct \listing : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
+  direct \listing : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd
 %  direct \enumerate : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
 %  direct \description : [(context -> int list -> inline-text -> inline-text -> block-boxes)?; inline-text list] inline-cmd
 
@@ -20,7 +20,7 @@ end = struct
 
   let minus = float (-1)
 
-  let default-listing ctx lst title inner =
+  let default-listing ctx lst title =
     let text-width = get-text-width ctx in
     let main-size = (get-font-size ctx) *' 0.35 in
     let gr-lst =
@@ -36,21 +36,17 @@ end = struct
       in
         inline-skip 3pt ++ main ++ inline-skip 3pt
     in
-    let circle-width = get-natural-width circle-ib in
-    let inner-ib = read-inline ctx inner in
-    let main-ib = inline-skip (circle-width *' minus) ++ circle-ib ++ inner-ib ++ inline-fil in
-    let deco-set = VDecoSet.empty in
-    let pads = (circle-width, 0pt, 0pt, 0pt) in
-      block-frame-breakable ctx pads deco-set
-        (fun ctx -> line-break true true ctx main-ib)
+      circle-ib
 
+  let-mutable if-break <- false
 
   let-mutable count-lst <- []
 
   let-mutable title-fun <- default-listing
 
 
-  let-inline ctx \item ?:title-opt ?:f-opt inner =
+  let-inline ctx \item ?:title-opt?:f-opt ?:break-opt inner =
+    let main-font-size = get-font-size ctx in
     let old-lst = !count-lst in
     let head =
       List.head old-lst |> Option.from 0
@@ -70,11 +66,39 @@ end = struct
       | None -> {}
       | Some(it) -> it
     in
-    let bb = f ctx new-lst title inner in
-      embed-block-breakable ctx bb
+    let is-break =
+      match break-opt with
+      | None -> !if-break
+      | Some(b) -> b
+    in
+    let title-ib = f ctx new-lst title in
+    let title-ib-width = get-natural-width title-ib in
+    let inner-ib = read-inline ctx inner in
+    let make-non-break-main-bb ctx =
+      inline-skip (title-ib-width *' minus) ++ title-ib ++ inner-ib
+      |> line-break true true ctx
+    in
+    let deco-set = VDecoSet.empty in
+    let non-break-pads = (title-ib-width, 0pt, 0pt, 0pt) in
+    let non-break-main-bb =
+      block-frame-breakable ctx non-break-pads deco-set make-non-break-main-bb
+    in
+    let break-pads = (main-font-size, 0pt, 0pt, 0pt) in
+    let break-main-bb =
+      let title-bb = line-break true true ctx title-ib in
+      let inner-bb =
+        block-frame-breakable ctx break-pads deco-set
+          (fun ctx -> line-break true true ctx inner-ib)
+      in
+        title-bb +++ inner-bb
+    in
+      if is-break then
+        embed-block-breakable ctx break-main-bb
+      else
+        embed-block-breakable ctx non-break-main-bb
 
 
-  let listing ctx f-opt itemize =
+  let listing ctx f-opt break-opt itemize =
     let () = count-lst <- 0::!count-lst in
     let f =
       match f-opt with
@@ -82,6 +106,11 @@ end = struct
       | Some(f) -> f
     in
     let () = title-fun <- f in
+    let () =
+      match break-opt with
+      | None -> if-break <- false
+      | Some(b) -> if-break <- b
+    in
     let make-bb it =
       let ib = read-inline ctx it in
       ib ++ inline-fil
@@ -91,12 +120,12 @@ end = struct
     |> List.map make-bb
     |> List.fold-left (+++) block-nil
 
-  let-block ctx +listing ?:f-opt itemize =
-    listing ctx f-opt itemize
+
+  let-block ctx +listing ?:f-opt ?:break-opt itemize =
+    listing ctx f-opt break-opt itemize
 
 
-
-  let-inline ctx \listing ?:f-opt itemize =
-      inline-fil ++ embed-block-breakable ctx (listing ctx f-opt itemize)
+  let-inline ctx \listing ?:f-opt ?:break-opt itemize =
+      inline-fil ++ embed-block-breakable ctx (listing ctx f-opt break-opt itemize)
 
 end
