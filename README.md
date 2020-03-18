@@ -1,6 +1,6 @@
 # SATySFi-simple-itemize
 
-SATySFi-simple-itemize is SATySFi package to write for simple bullet.
+SATySFi-simple-itemize is SATySFi package simple to write for bullet.
 
 # install
 
