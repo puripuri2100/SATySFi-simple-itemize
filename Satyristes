@@ -6,9 +6,11 @@
   (version "1.0.0")
   (sources
     (
-     (package "simple-itemize" "./stdjahtml.satyh-html")
+     (package "simple-itemize.satyh" "./simple-itemize.satyh")
     )
   )
   (opam "satysfi-simple-itemize.opam")
-  (dependencies ())
+  (dependencies (
+    (base ())
+  ))
   (compatibility ((satyrographos "0.0.1"))))
