@@ -1,5 +1,5 @@
 opam-version: "2.0"
-name: "satysfi-simple-itemize"
+name: "satysfi-simple-itemize-doc"
 version: "1.0.1"
 synopsis: "Document: Simple bullet on SATySFi"
 description: """Document: Simple bullet on SATySFi."""
@@ -14,13 +14,18 @@ dev-repo: "git+https://github.com/puripuri2100/SATySFi-simple-itemize.git"
 depends: [
   "satysfi" {>= "0.0.3" & < "0.0.7"}
   "satyrographos" {>= "0.0.2" & < "0.0.4"}
-  "satysfi-base" {>="1.0.0"}
   "satysfi-dist"
+  "satysfi-simple-itemize" {= "%{version}%"}
 ]
-build: [ ]
+build: [
+  ["satyrographos" "opam" "build"
+   "-name" "simple-itemize-doc"
+   "-prefix" "%{prefix}%"
+   "-script" "%{build}%/Satyristes"]
+]
 install: [
   ["satyrographos" "opam" "install"
-   "-name" "simple-itemize"
+   "-name" "simple-itemize-doc"
    "-prefix" "%{prefix}%"
    "-script" "%{build}%/Satyristes"]
 ]

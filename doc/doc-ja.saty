@@ -1,0 +1,87 @@
+@require: stdjabook
+@require: code
+@require: itemize
+
+document (|
+  title = {simple-itemize};
+  author = {Naoki Kaneko (a.k.a. "puripuri2100")};
+  show-title = true;
+  show-toc = false;
+|) '<
++section{このパッケージの役割} <
+
+  +p{SATySFiの\code(`itemize`);型ではなく\code(`inline-text list`);を用いて簡単に箇条書きが書けるパッケージです。}
+
+>
+
++section {このリポジトリにあるパッケージ} <
+  +listing {
+    * simple-itemize.satyh
+  }
+>
+
++section {モジュール名} <
+  +p{\code(`SimpleItemize`);}
+>
+
++section {提供コマンド}<
+  +listing{
+    * \code(`direct \item : [inline-text?; (context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text] inline-cmd`);
+    * \code(`direct +listing : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd`);
+    * \code(`direct +enumerate : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd`);
+    * \code(`direct +description : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] block-cmd`);
+    * \code(`direct \listing : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd`);
+    * \code(`direct \enumerate : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd`);
+    * \code(`direct \description : [(context -> int list -> inline-text -> inline-boxes)?; bool?; inline-text list] inline-cmd`);
+  }
+>
+
++section {基本的な使い方} <
+
++code(`
++listing{|
+  \item{text} |
+  \item?:({title}){text}
+|}
+`);
+
+  +p{のように\code(`inline-text list`);の中に\code(`\item`);コマンドを書きます。}
+  +p{\code(`\item`);コマンドでは主にテキストを書きます。}
+  +p{入れ子構造にしたいときは、
+    \d-code(`
++listing{|
+  \item{text
+    \listing{|
+      \item{text2}
+    |}
+  } |
+  \item{text}
+|}
+`);
+  のように、中に書きます。\code(`listing`);の中に\code(`enumerate`);や\code(`description`);を書くなどしても大丈夫ですが、深さはリセットされます。}
+
+  +p{\code(`description`);や\code(`listing`);ではタイトルを付けるときがありますが、そのときは\code(`inline-text`);のオプション引数を与えてください。}
+>
+
++section {デザインのカスタマイズ} <
+
+  +listing {
+    * \code(`\item ?* ?:(f) {text}`);のように\code(`\item`);コマンドの2番目
+    * \code(`+listing ?:(f) {|\item{}|}`);のように環境コマンドの1番目
+  }
+  +p{に、デザインする関数をオプション引数の形で与えることでタイトルのデザインを変えることができます。}
+
+  +p{デザインする関数は\code(`context -> int list -> inline-text -> inline-boxes`);という型で、文脈・何番目かを表すリスト・タイトルの3つを受け取って\code(`inline-boxes`);を返すものになります。}
+
+
+  +p{さらに、タイトルと本文で改行するかどうかを選択することができます。}
+
+  +listing{
+    * \code(`\item ?* ?* ?(true) {text}`);のように\code(`\item`);コマンドの3番目
+    * \code(`+listing ?* ?:(true) {|\item{}|}`);のように環境コマンドの2番目
+  }
+  +p{に、\code(`bool`);型を入れます。}
+  +p{デフォルトは、\code(`listing`);と\code(`enumerate`);では\code(`false`);で、\code(`description`);では\code(`true`);です。}
+>
+
+>

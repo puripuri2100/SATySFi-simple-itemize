@@ -3,7 +3,7 @@
 
 (library
   (name "simple-itemize")
-  (version "1.0.0")
+  (version "1.0.1")
   (sources
     (
      (package "simple-itemize.satyh" "./simple-itemize.satyh")
@@ -12,5 +12,29 @@
   (opam "satysfi-simple-itemize.opam")
   (dependencies (
     (base ())
-  ))
-  (compatibility ((satyrographos "0.0.1"))))
+    (dist ())
+  )))
+
+
+;; Library doc declaration
+(libraryDoc
+  ;; Library doc name
+  (name "simple-itemize-doc")
+  ;; Library version
+  (version "1.0.1")
+  ;; Working directory to build docs
+  (workingDirectory "doc")
+  ;; Build commands
+  (build
+    ;; Run SATySFi
+    ((satysfi "doc-ja.saty" "-o" "doc-ja.pdf")))
+  ;; Files
+  (sources
+    ((doc "doc-ja.pdf" "doc/doc-ja.pdf")))
+  ;; OPAM package file
+  (opam "satysfi-simple-itemize-doc.opam")
+  ;; Dependency
+  (dependencies
+    ((simple-itemize ()) ; the main library
+     (dist ())
+    )))
