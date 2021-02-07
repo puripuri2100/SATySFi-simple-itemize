@@ -138,7 +138,7 @@ end = struct
     let title-ib-width = get-natural-width title-ib in
     let inner-ib = read-inline ctx inner in
     let make-non-break-main-bb ctx =
-      inline-skip (title-ib-width *' minus) ++ title-ib ++ inner-ib
+      inline-skip (title-ib-width *' minus) ++ title-ib ++ inner-ib ++ inline-fil
       |> line-break true true ctx
     in
     let deco-set = VDecoSet.empty in
@@ -151,14 +151,14 @@ end = struct
       let title-bb = line-break true true ctx title-ib in
       let inner-bb =
         block-frame-breakable ctx break-pads deco-set
-          (fun ctx -> line-break true true ctx inner-ib)
+          (fun ctx -> line-break true true ctx (inner-ib ++ inline-fil))
       in
         title-bb +++ inner-bb
     in
       if is-break then
-        embed-block-breakable ctx break-main-bb
+        inline-fil ++ embed-block-breakable ctx break-main-bb
       else
-        embed-block-breakable ctx non-break-main-bb
+        inline-fil ++ embed-block-breakable ctx non-break-main-bb
 
 
   let make-itemize ctx f-default f-opt break-default break-opt change-bool itemize =
@@ -183,6 +183,10 @@ end = struct
       | Some(b) -> if-break <- b
     in
     let make-bb it =
+      let ctx =
+        ctx
+        |> set-paragraph-margin 0pt 0pt
+      in
       let ib = read-inline ctx it in
       ib ++ inline-fil
       |> line-break true true ctx
