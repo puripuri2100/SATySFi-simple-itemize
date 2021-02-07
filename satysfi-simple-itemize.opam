@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "satysfi-simple-itemize"
-version: "1.0.1"
+version: "1.0.2"
 synopsis: "Document: Simple bullet on SATySFi"
 description: """Document: Simple bullet on SATySFi."""
 

@@ -3,7 +3,7 @@
 
 (library
   (name "simple-itemize")
-  (version "1.0.1")
+  (version "1.0.2")
   (sources
     (
      (package "simple-itemize.satyh" "./simple-itemize.satyh")
@@ -21,7 +21,7 @@
   ;; Library doc name
   (name "simple-itemize-doc")
   ;; Library version
-  (version "1.0.1")
+  (version "1.0.2")
   ;; Working directory to build docs
   (workingDirectory "doc")
   ;; Build commands
